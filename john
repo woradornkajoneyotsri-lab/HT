@@ -1,0 +1,144 @@
+```html
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบ POS ส้มตำแซ่บเวอร์ & ระบบป้องกันการทุจริตขั้นสูง V61.0 (Free Production Ready)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Header -->
+    <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-md px-6 py-3 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-white text-red-600 p-2 rounded-xl font-bold text-xl shadow">
+                <i class="fa-solid fa-fire"></i>
+            </div>
+            <div>
+                <h1 id="brandTitle" class="text-xl font-bold tracking-wide">ส้มตำแซ่บเวอร์ POS <span class="text-xs bg-red-800 px-2 py-0.5 rounded-full font-normal">Confidential Blind PIN</span></h1>
+                <p class="text-xs text-red-200">
+                    โทร: <span id="brandPhone">02-123-4567</span> | พิกัด: <span id="brandLocation">กรุงเทพฯ</span> | 
+                    ผู้ใช้งานปัจจุบัน: <span id="currentCashier" class="font-semibold underline cursor-pointer bg-red-800/80 px-2 py-0.5 rounded" onclick="openSwitchUser()">สมชาย (พนักงาน)</span>
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 flex-wrap">
+            <!-- Shift Opening & Closing Buttons -->
+            <button onclick="openShift()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow">
+                <i class="fa-solid fa-play"></i> <span>เปิดกะงาน</span>
+            </button>
+            <button onclick="requestCloseShift()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow">
+                <i class="fa-solid fa-stop"></i> <span>ขอปิดกะ (รอ CEO อนุมัติ)</span>
+            </button>
+
+            <button onclick="openOrgModal()" class="bg-purple-700 hover:bg-purple-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow border border-purple-500/30">
+                <i class="fa-solid fa-sitemap"></i> <span>ผังองค์กร</span>
+            </button>
+            <button onclick="openShiftScheduleModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow">
+                <i class="fa-solid fa-calendar-days"></i> <span>ตรวจสอบกะงาน</span>
+            </button>
+            <button onclick="openAttendanceModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow">
+                <i class="fa-solid fa-clock"></i> <span>ลงเวลา/ลา/เช็คสิทธิ์</span>
+            </button>
+            <button onclick="openAuditModal()" class="bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow">
+                <i class="fa-solid fa-shield-halved"></i> <span>ประวัติทุจริต (ล็อก CEO)</span>
+            </button>
+            <button onclick="openCashDrawerModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow">
+                <i class="fa-solid fa-cash-register"></i> <span>ลิ้นชักเงิน</span>
+            </button>
+
+            <!-- Separate Backoffice Buttons -->
+            <button onclick="openManagerBackofficeModal()" class="bg-amber-700 hover:bg-amber-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow border border-amber-500/30">
+                <i class="fa-solid fa-user-gear"></i> <span>หลังบ้านผู้จัดการ (คุณตาต้า)</span>
+            </button>
+            <button onclick="openCeoBackofficeModal()" class="bg-purple-900 hover:bg-purple-950 text-amber-300 px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow border border-amber-400/30">
+                <i class="fa-solid fa-crown"></i> <span>หลังบ้าน CEO (คุณจอห์น)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Left: Menu & Categories -->
+        <div class="w-3/5 flex flex-col bg-slate-50 border-r border-slate-200 p-4 overflow-hidden">
+            <!-- Categories -->
+            <div class="flex space-x-2 overflow-x-auto pb-3 mb-2 shrink-0">
+                <button onclick="filterMenu('all')" class="cat-btn bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow whitespace-nowrap transition">ทั้งหมด</button>
+                <button onclick="filterMenu('somtam')" class="cat-btn bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-sm font-medium shadow-sm whitespace-nowrap transition border border-slate-200">เมนูส้มตำ</button>
+                <button onclick="filterMenu('grill')" class="cat-btn bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-sm font-medium shadow-sm whitespace-nowrap transition border border-slate-200">ย่าง/ทอด</button>
+                <button onclick="filterMenu('soup')" class="cat-btn bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-sm font-medium shadow-sm whitespace-nowrap transition border border-slate-200">ต้มแซ่บ/แกง</button>
+                <button onclick="filterMenu('side')" class="cat-btn bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-sm font-medium shadow-sm whitespace-nowrap transition border border-slate-200">เครื่องเคียง/ยำ</button>
+                <button onclick="filterMenu('drink')" class="cat-btn bg-white text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-xl text-sm font-medium shadow-sm whitespace-nowrap transition border border-slate-200">เครื่องดื่ม</button>
+            </div>
+
+            <!-- Menu Grid -->
+            <div id="menuGrid" class="flex-1 grid grid-cols-3 gap-3 overflow-y-auto custom-scroll pr-1">
+                <!-- Javascript will inject items here -->
+            </div>
+        </div>
+
+        <!-- Right: Current Order / POS Bill -->
+        <div class="w-2/5 flex flex-col bg-white shadow-xl">
+            <!-- Table & Order Info -->
+            <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div>
+                    <span class="text-xs text-slate-500 block">โต๊ะอาหาร</span>
+                    <select id="tableSelect" class="font-bold text-slate-700 bg-white border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <option>โต๊ะ 1 (โซนแอร์)</option>
+                        <option>โต๊ะ 2 (โซนแอร์)</option>
+                        <option>โต๊ะ 3 (ด้านนอก)</option>
+                        <option>โต๊ะ 4 (ด้านนอก)</option>
+                        <option>สั่งกลับบ้าน (Takeaway)</option>
+                    </select>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs text-slate-500 block">เลขที่บิล</span>
+                    <span id="billId" class="font-bold text-red-600 text-sm">REC-69001</span>
+                </div>
+            </div>
+
+            <!-- Order Items List -->
+            <div class="flex-1 overflow-y-auto p-4 custom-scroll divide-y divide-slate-100" id="orderList">
+                <div class="text-center text-slate-400 py-12">
+                    <i class="fa-solid fa-basket-shopping text-4xl mb-2"></i>
+                    <p class="text-sm">ยังไม่มีรายการอาหารในบิลนี้</p>
+                </div>
+            </div>
+
+            <!-- Anti-Fraud Notice Banner -->
+            <div class="bg-amber-50 border-t border-amber-200 px-4 py-2 text-[11px] text-amber-800 flex items-center justify-between">
+                <span><i class="fa-solid fa-lock text-amber-600 mr-1"></i> ระบบล็อก Confidential Blind PIN: การลบ/ลด/ยกเลิก ต้องใช้ PIN ผู้จัดการ/CEO หรือพนักงานที่ได้รับสิทธิ์อนุมัติจาก CEO เท่านั้น</span>
+                <span class="font-bold text-red-600">Anti-Fraud Active</span>
+            </div>
+
+            <!-- Totals & Checkout -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
+                <div class="flex justify-between text-sm text-slate-600">
+                    <span>ยอดรวมสินค้า</span>
+                    <span id="subTotal">0.00 ฿</span>
+                </div>
+                <div class="flex justify-between text-sm text-slate-600">
+                    <span>ส่วนลด (ถ้ามี)</span>
+                    <span id="discountTotal">0.00 ฿</span>
+                </div>
+                <div class="flex justify-between text-lg font-bold text-slate-800 pt-2 border-t border-slate-200">
+                    <span>ยอดชำระสุทธิ</span>
+                    <span id="grandTotal" class="text-red-600">0.00 ฿</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button onclick="requestCancelBill()" class="bg-slate-200 hover:bg-red-100 text-slate-700 hover:text-red-700 py-2.5 rounded-xl font-se
